@@ -16,11 +16,15 @@ public class Host extends JButton implements ActionListener{
 	int id;
 	public int state = 0;
 	public static int ING = 1;
+	public static int KEEP = 2;
+	public static int ERR = 3;
 	public static int OFF = 0;
 	private Thread timer;
 	private CoffeeBarDB db;
+	private int price = 4;
 	public ImageIcon iNGIcon;
 	private boolean if_break = false;
+	private double hour;
 	public Host(int id) {
 		// TODO Auto-generated constructor stub
 		super(String.valueOf(id));
@@ -29,40 +33,60 @@ public class Host extends JButton implements ActionListener{
 		this.id = id;
 		this.setBounds(new Rectangle(100, 100));
 		this.addActionListener(this);
-		state = ING;
+		state = OFF;
 	}
 	
 	@SuppressWarnings("deprecation")
 	public void setOff() {
 		this.setText(String.valueOf(id));
-		state = ING;
+		state = OFF;
 		if(timer.isAlive()){
 			if_break = true;
 		}
 		try {
+			double reamin = this.db.remainTime(id);
 			db.SighOut(id);
+			JOptionPane.showConfirmDialog(this, "You need to pay : "+ (this.hour - reamin) * price);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-			
+		this.updateUI();
+		this.timer = null;
+		
+		
 	}
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		// TODO Auto-generated method stub
 		
-		
-		state = (state +1 )%2;
+		L.l(this.state);
+//		state = (state +1 )%2;
 		if (state == ING){
+			if (JOptionPane.showConfirmDialog(this, "Keep this host ?")==0){
+				this.state = KEEP;
+				this.setText("Keeping");
+				this.setOff();
+				
+				this.updateUI();
+				return;
+			}
+			
 			if(JOptionPane.showConfirmDialog(this, "if off this host?") == 0){
 				setOff();
 			}
 //				setOff();
 //			}
-		}else{
+		}else if(state == OFF){
+			if (JOptionPane.showConfirmDialog(this, "if this host error?") == 0){
+				this.setText("error");
+				this.state = ERR;
+				this.updateUI();
+				return;
+			}
 			int lon = -1; 
-			lon = Integer.valueOf( JOptionPane.showInputDialog("How long You want:"));
+			lon = Integer.valueOf( JOptionPane.showInputDialog("the amout of  hour You want to Play:"));
 			if (lon <0){
 				return;
 			}
@@ -77,7 +101,15 @@ public class Host extends JButton implements ActionListener{
 			}
 			
 			StartTimer(lon);
+			state = ING;
 			
+		}else if (state == ERR){
+			if (JOptionPane.showConfirmDialog(this, "fixed host ?") == 0){
+				this.setText(String.valueOf(id));
+				this.state = OFF;
+				this.updateUI();
+				return;
+			}
 		}
 		this.updateUI();
 		
@@ -86,10 +118,11 @@ public class Host extends JButton implements ActionListener{
 	
 	public void StartTimer(int hour){
 //		this.setIcon(iNGIcon);
+		this.hour = hour;
 		timer = new Thread(new TimerRun(this,hour));
 		timer.start();
-		this.state = OFF;
-		this.setText(String.valueOf(id));
+		this.state = ING;
+//		this.setText(String.valueOf(id));
 		
 	}
 	
@@ -110,6 +143,8 @@ public class Host extends JButton implements ActionListener{
 					break;
 				}
 				host.setText( String.valueOf(last ));
+				host.updateUI();
+				L.l("test");
 				try {
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {
@@ -119,6 +154,8 @@ public class Host extends JButton implements ActionListener{
 				last -= 1;
 				
 			}
+			
+			if_break = false;
 		}
 		
 	}

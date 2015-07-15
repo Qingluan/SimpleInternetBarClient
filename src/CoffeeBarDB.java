@@ -135,6 +135,7 @@ public class CoffeeBarDB {
 	public double remainTime(int id) throws Exception{
 		String sql = "select end from bar where id=" +String.valueOf(id)+";";
 		ResultSet set = my_state.executeQuery(sql);
+		L.l(sql);
 		while(set.next()){
 			long end =  Long.valueOf(set.getString("end"));
 			long now = end - System.currentTimeMillis();
